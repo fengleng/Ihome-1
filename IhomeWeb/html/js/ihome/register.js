@@ -23,7 +23,7 @@ function generateImageCode() {
     imageCodeId = generateUUID();
 
     // 设置页面中图片验证码img标签的src属性
-    var imageCodeUrl = "/api/v1.0/imagecode/" + imageCodeId;
+    var imageCodeUrl = "/api/v1.0/imagecode?uuid=" + imageCodeId;
     $(".image-code>img").attr("src", imageCodeUrl);
 }
 
