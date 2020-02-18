@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/micro/go-micro/util/log"
 	"github.com/micro/go-micro"
+	"github.com/micro/go-micro/service/grpc"
+	"github.com/micro/go-micro/util/log"
 	"sss/PostLogin/handler"
 	"sss/PostLogin/subscriber"
 
@@ -11,7 +12,7 @@ import (
 
 func main() {
 	// New Service
-	service := micro.NewService(
+	service := grpc.NewService(
 		micro.Name("go.micro.srv.PostLogin"),
 		micro.Version("latest"),
 	)
