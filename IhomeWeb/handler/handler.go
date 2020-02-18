@@ -15,6 +15,7 @@ import (
 	"regexp"
 	go_micro_srv_GetArea "sss/GetArea/proto/GetArea"
 	go_micro_srv_GetImageCd "sss/GetImageCd/proto/GetImageCd"
+	go_micro_srv_GetSession "sss/GetSession/proto/GetSession"
 	go_micro_srv_GetSmscd "sss/GetSmscd/proto/GetSmscd"
 	"sss/IhomeWeb/models"
 	"sss/IhomeWeb/utils"
@@ -79,16 +80,32 @@ func GetIndex(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 func GetSession(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	beego.Info("获取Session url:/api/v1.0/session")
-	response := map[string]interface{}{
-		"errno":  utils.RECODE_SESSIONERR,
-		"errmsg": utils.RecodeText(utils.RECODE_SESSIONERR),
+	cookie, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
 	}
-	w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	server := grpc.NewService()
+	server.Init()
+
+	client := go_micro_srv_GetSession.NewGetSessionService("go.micro.srv.GetSession", server.Client())
+	resp, err := client.Call(context.TODO(), &go_micro_srv_GetSession.Request{
+		SessionID: cookie.Value,
+	})
+	if err != nil {
+		utils.Response(w, resp.Errno, utils.RecodeText(resp.Errmsg), nil)
+		return
+	}
+	data := map[string]string{}
+	data["name"] = resp.UserName
+	beego.Info("========================")
+	if err := utils.Response(w, resp.Errno, utils.RecodeText(resp.Errmsg), data); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+
+	return
 }
 
 func GetImages(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -207,3 +224,4 @@ func PostRet(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		return
 	}
 }
+
