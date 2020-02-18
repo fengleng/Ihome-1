@@ -42,6 +42,8 @@ func main() {
 	rou.POST("/api/v1.0/sessions", handler.PostLogin)
 	// 用户退出
 	rou.DELETE("/api/v1.0/session", handler.DeleteLogout)
+	// 用户个人信息查看
+	rou.GET("/api/v1.0/user", handler.GetUserInfo)
 	service.Handle("/", rou)
 
 	// run service
