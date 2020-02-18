@@ -13,19 +13,26 @@ import (
 	"image/png"
 	"net/http"
 	"regexp"
+	go_micro_srv_DeleteSession "sss/DeleteSession/proto/DeleteSession"
 	go_micro_srv_GetArea "sss/GetArea/proto/GetArea"
 	go_micro_srv_GetImageCd "sss/GetImageCd/proto/GetImageCd"
 	go_micro_srv_GetSession "sss/GetSession/proto/GetSession"
 	go_micro_srv_GetSmscd "sss/GetSmscd/proto/GetSmscd"
 	"sss/IhomeWeb/models"
 	"sss/IhomeWeb/utils"
+	go_micro_srv_PostLogin "sss/PostLogin/proto/PostLogin"
 	go_micro_srv_PostRet "sss/PostRet/proto/PostRet"
 )
 
+func initService() micro.Service {
+	server := grpc.NewService()
+	server.Init()
+	return server
+}
+
 func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	beego.Info("获取地区请求客户端 url:api/v1.0/areas")
-	server := grpc.NewService(micro.Name("go.micro.web.IhomeWeb"))
-	server.Init()
+	server := initService()
 
 	// 调用服务返回句柄
 	client := go_micro_srv_GetArea.NewGetAreaService("go.micro.srv.GetArea", server.Client())
@@ -86,8 +93,7 @@ func GetSession(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		return
 	}
 
-	server := grpc.NewService()
-	server.Init()
+	server := initService()
 
 	client := go_micro_srv_GetSession.NewGetSessionService("go.micro.srv.GetSession", server.Client())
 	resp, err := client.Call(context.TODO(), &go_micro_srv_GetSession.Request{
@@ -113,8 +119,7 @@ func GetImages(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	uuid := p.ByName("uuid")
 	fmt.Println("uuid: == ", uuid)
 
-	server := grpc.NewService()
-	server.Init()
+	server := initService()
 
 	client := go_micro_srv_GetImageCd.NewGetImageCdService("go.micro.srv.GetImageCd", server.Client())
 	resp, err := client.Call(context.TODO(), &go_micro_srv_GetImageCd.Request{
@@ -160,8 +165,7 @@ func GetSmsCode(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	imageStr := r.URL.Query()["text"][0]
 	uuid := r.URL.Query()["id"][0]
 
-	server := grpc.NewService()
-	server.Init()
+	server := initService()
 
 	client := go_micro_srv_GetSmscd.NewGetSmscdService("go.micro.srv.GetSmscd", server.Client())
 	resp, err := client.Call(context.TODO(), &go_micro_srv_GetSmscd.Request{
@@ -195,8 +199,7 @@ func PostRet(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		return
 	}
 
-	server := grpc.NewService()
-	server.Init()
+	server := initService()
 
 	client := go_micro_srv_PostRet.NewPostRetService("go.micro.srv.PostRet", server.Client())
 	resp, err := client.Call(context.TODO(), &go_micro_srv_PostRet.Request{
@@ -209,19 +212,83 @@ func PostRet(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		return
 	}
 	// 读取cookie 统一 "userLogin"
-	cookie, err := r.Cookie("userLogin")
-	if err != nil || "" == cookie.Value {
-		cookie := &http.Cookie{
-			Name:   "userLogin",
-			Value:  resp.SessionId,
-			Path:   "/",
-			MaxAge: 3600,
-		}
-		http.SetCookie(w, cookie)
-	}
+	setCookie(w, r, resp.SessionId)
 	if err := utils.Response(w, resp.Erron, resp.Errmsg, nil); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 }
 
+func PostLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("用户登陆 url: /api/v1.0/sessions")
+	var reqParams = map[string]string{}
+	if err := json.NewDecoder(r.Body).Decode(&reqParams); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	beego.Info("请求数据：", reqParams)
+	server := initService()
+	client := go_micro_srv_PostLogin.NewPostLoginService("go.micro.srv.PostLogin", server.Client())
+	resp, err := client.Call(context.TODO(), &go_micro_srv_PostLogin.Request{
+		Mobile:   reqParams["mobile"],
+		Password: reqParams["password"],
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	setCookie(w, r, resp.SessionID)
+	if err := utils.Response(w, resp.Errno, resp.Errmsg, nil); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+}
+
+func setCookie(w http.ResponseWriter, r *http.Request, sessionId string) {
+	// 读取cookie 统一 "userLogin"
+	cookie, err := r.Cookie("userLogin")
+	if err != nil || "" == cookie.Value {
+		cookie := &http.Cookie{
+			Name:   "userLogin",
+			Value:  sessionId,
+			Path:   "/",
+			MaxAge: 3600,
+		}
+		http.SetCookie(w, cookie)
+	}
+}
+
+func DeleteLogout(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("用户登陆 url: /api/v1.0/session")
+	userlogin, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
+	}
+
+	server := initService()
+	client := go_micro_srv_DeleteSession.NewDeleteSessionService("go.micro.srv.DeleteSession", server.Client())
+	resp, err := client.Call(context.TODO(), &go_micro_srv_DeleteSession.Request{
+		SessionID: userlogin.Value,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+
+	cookie, err := r.Cookie("userLogin")
+	if err != nil || cookie.Value == "" {
+		return
+	} else {
+		cookie := http.Cookie{Name: "userLogin", Path: "/", MaxAge: -1}
+		http.SetCookie(w, &cookie)
+	}
+
+	if err := utils.Response(w, resp.Errno, resp.Errmsg, nil); err != nil {
+		http.Error(w, err.Error(), 503)
+		beego.Info(err)
+		return
+	}
+}
