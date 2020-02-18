@@ -13,7 +13,7 @@ import (
 type User struct {
 	Id            int           `json:"user_id"`                    // 用户编号
 	Name          string        `orm:"size(32)" json:"name"`        // 用户昵称
-	Password_hash string        `orm:"size(128)" json:"password"`   // 加密后的密码
+	Password_hash string        `orm:"size(1000)" json:"password"`  // 加密后的密码
 	Mobile        string        `orm:"size(11)" json:"mobile"`      // 手机号
 	Real_name     string        `orm:"size(32)" json:"real_name"`   // 真实姓名
 	Id_card       string        `orm:"size(20)" json:"id_card"`     // 身份证号

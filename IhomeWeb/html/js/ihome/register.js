@@ -71,7 +71,7 @@ function sendSMSCode() {
             }, 1000, 60)
         } else {
             // 表示后端出现了错误，可以将错误信息展示到前端页面中
-            $("#phone-code-err span").html(resp.Errmsg);
+            $("#phone-code-err span").html(resp.errmsg);
             $("#phone-code-err").show();
             // 将点击按钮的onclick事件函数恢复回去
             $(".phonecode-a").attr("onclick", "sendSMSCode();");

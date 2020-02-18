@@ -21,11 +21,12 @@ const (
 	RECODE_UNKNOWERR      = "4501"
 	RECODE_MOBILEERR      = "4502"
 	RECODE_MOBILEXISTEERR = "4503"
+	RECODE_VERIFCODEILERR = "4504"
 )
 
 var recodeText = map[string]string{
 	RECODE_OK:             "成功",
-	RECODE_DBERR:          "数据库查询失败",
+	RECODE_DBERR:          "数据库操作失败",
 	RECODE_NODATA:         "无数据",
 	RECODE_DATAEXIST:      "数据已存在",
 	RECODE_DATAERR:        "数据错误",
@@ -44,6 +45,7 @@ var recodeText = map[string]string{
 	RECODE_UNKNOWERR:      "未知错误",
 	RECODE_MOBILEERR:      "手机号格式不正确",
 	RECODE_MOBILEXISTEERR: "手机号已注册",
+	RECODE_VERIFCODEILERR: "图片验证码错误",
 }
 
 func RecodeText(code string) string {

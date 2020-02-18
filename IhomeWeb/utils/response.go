@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Response(w http.ResponseWriter, err, errmsg string, data interface{}) error {
+func Response(w http.ResponseWriter, errno, errmsg string, data interface{}) error {
 	/*
 		response := map[string]string{
 					"Error":  utils.RECODE_MOBILEERR,
@@ -19,8 +19,8 @@ func Response(w http.ResponseWriter, err, errmsg string, data interface{}) error
 	*/
 
 	resp := map[string]interface{}{
-		"Error":  err,
-		"Errmsg": errmsg,
+		"errno":  errno,
+		"errmsg": errmsg,
 		"data":   data,
 	}
 

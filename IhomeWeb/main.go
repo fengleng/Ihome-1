@@ -36,6 +36,8 @@ func main() {
 	rou.GET("/api/v1.0/imagecode/:uuid", handler.GetImages)
 	// 获取短信验证码
 	rou.GET("/api/v1.0/smscode/:mobile", handler.GetSmsCode)
+	//
+	rou.POST("/api/v1.0/users", handler.PostRet)
 	service.Handle("/", rou)
 
 	// run service

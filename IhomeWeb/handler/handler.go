@@ -18,6 +18,7 @@ import (
 	go_micro_srv_GetSmscd "sss/GetSmscd/proto/GetSmscd"
 	"sss/IhomeWeb/models"
 	"sss/IhomeWeb/utils"
+	go_micro_srv_PostRet "sss/PostRet/proto/PostRet"
 )
 
 func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -162,4 +163,47 @@ func GetSmsCode(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		return
 	}
 
+}
+
+func PostRet(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("用户注册 url: api/v1.0/users")
+	var reqParams = map[string]string{}
+	if err := json.NewDecoder(r.Body).Decode(&reqParams); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	beego.Info(reqParams, "===========")
+	if reqParams["mobile"] == "" || reqParams["password"] == "" || reqParams["sms_code"] == "" {
+		utils.Response(w, utils.RECODE_PARAMERR, utils.RecodeText(utils.RECODE_PARAMERR), nil)
+		return
+	}
+
+	server := grpc.NewService()
+	server.Init()
+
+	client := go_micro_srv_PostRet.NewPostRetService("go.micro.srv.PostRet", server.Client())
+	resp, err := client.Call(context.TODO(), &go_micro_srv_PostRet.Request{
+		Mobile:   reqParams["mobile"],
+		Password: reqParams["password"],
+		SmsCode:  reqParams["sms_code"],
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	// 读取cookie 统一 "userLogin"
+	cookie, err := r.Cookie("userLogin")
+	if err != nil || "" == cookie.Value {
+		cookie := &http.Cookie{
+			Name:   "userLogin",
+			Value:  resp.SessionId,
+			Path:   "/",
+			MaxAge: 3600,
+		}
+		http.SetCookie(w, cookie)
+	}
+	if err := utils.Response(w, resp.Erron, resp.Errmsg, nil); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 }
