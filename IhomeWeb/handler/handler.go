@@ -6,18 +6,21 @@ import (
 	"fmt"
 	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
+	"github.com/julienschmidt/httprouter"
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/service/grpc"
 	"image"
 	"image/png"
 	"net/http"
+	"regexp"
 	go_micro_srv_GetArea "sss/GetArea/proto/GetArea"
 	go_micro_srv_GetImageCd "sss/GetImageCd/proto/GetImageCd"
+	go_micro_srv_GetSmscd "sss/GetSmscd/proto/GetSmscd"
 	"sss/IhomeWeb/models"
 	"sss/IhomeWeb/utils"
 )
 
-func GetArea(w http.ResponseWriter, r *http.Request) {
+func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	beego.Info("获取地区请求客户端 url:api/v1.0/areas")
 	server := grpc.NewService(micro.Name("go.micro.web.IhomeWeb"))
 	server.Init()
@@ -59,7 +62,7 @@ func GetArea(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetIndex(w http.ResponseWriter, r *http.Request) {
+func GetIndex(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	beego.Info("获取首页轮播图 url:/api/v1.0/house/index")
 	response := map[string]interface{}{
 		"errno":  utils.RECODE_OK,
@@ -73,7 +76,7 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetSession(w http.ResponseWriter, r *http.Request) {
+func GetSession(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	beego.Info("获取Session url:/api/v1.0/session")
 	response := map[string]interface{}{
 		"errno":  utils.RECODE_SESSIONERR,
@@ -87,9 +90,9 @@ func GetSession(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetImages(w http.ResponseWriter, r *http.Request) {
+func GetImages(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	beego.Info("获取首页轮播图 url: /api/v1.0/imagecode/:uuid")
-	uuid := r.URL.Query()["uuid"][0]
+	uuid := p.ByName("uuid")
 	fmt.Println("uuid: == ", uuid)
 
 	server := grpc.NewService()
@@ -119,5 +122,44 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(image)
 
 	png.Encode(w, image)
+
+}
+
+func GetSmsCode(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("获取短信验证码 url: /api/v1.0/smscode/:mobile")
+	mobile := p.ByName("mobile")
+	// 正则表达式 手机号
+	mobileReg := regexp.MustCompile(`0?(13|14|15|17|18|19)[0-9]{9}`)
+	bl := mobileReg.MatchString(mobile)
+	if !bl {
+		beego.Info("+++++", bl)
+		utils.Response(w, utils.RECODE_MOBILEERR, utils.RecodeText(utils.RECODE_MOBILEERR), nil)
+		return
+
+	}
+	beego.Info("====================")
+
+	imageStr := r.URL.Query()["text"][0]
+	uuid := r.URL.Query()["id"][0]
+
+	server := grpc.NewService()
+	server.Init()
+
+	client := go_micro_srv_GetSmscd.NewGetSmscdService("go.micro.srv.GetSmscd", server.Client())
+	resp, err := client.Call(context.TODO(), &go_micro_srv_GetSmscd.Request{
+		Mobile:   mobile,
+		Uuid:     uuid,
+		ImageStr: imageStr,
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if err := utils.Response(w, resp.Error, resp.Errmsg, nil); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
 }

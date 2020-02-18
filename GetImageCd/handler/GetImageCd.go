@@ -2,14 +2,12 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
 	"image/color"
 	"sss/IhomeWeb/utils"
 	"time"
 
-	"github.com/astaxie/beego/cache"
 	"github.com/micro/go-micro/util/log"
 	GetImage "sss/GetImageCd/proto/GetImageCd"
 
@@ -28,16 +26,7 @@ func (e *GetImageCd) Call(ctx context.Context, req *GetImage.Request, rsp *GetIm
 
 	img, str := cap.Create(4, captcha.ALL)
 
-	redis_conf := map[string]string{
-		"key":   utils.G_server_name,
-		"conn":  utils.G_redis_addr + ":" + utils.G_redis_port,
-		"dbNum": utils.G_redis_dbnum,
-	}
-	beego.Info(redis_conf)
-	//将map转换为json
-	redis_conf_json, _ := json.Marshal(redis_conf)
-	// 创建redis句柄
-	bm, err := cache.NewCache("redis", string(redis_conf_json))
+	bm, err := utils.Redis(utils.G_server_name, utils.G_redis_addr, utils.G_redis_port, utils.G_redis_dbnum)
 	if err != nil {
 		beego.Info("redis 连接失败: ", err)
 		rsp.Error = utils.RECODE_DBERR

@@ -23,7 +23,7 @@ function generateImageCode() {
     imageCodeId = generateUUID();
 
     // 设置页面中图片验证码img标签的src属性
-    var imageCodeUrl = "/api/v1.0/imagecode?uuid=" + imageCodeId;
+    var imageCodeUrl = "/api/v1.0/imagecode/" + imageCodeId;
     $(".image-code>img").attr("src", imageCodeUrl);
 }
 
@@ -62,7 +62,6 @@ function sendSMSCode() {
                     clearInterval(t);
                     // 将点击获取验证码的按钮展示的文本回复成原始文本
                     $(".phonecode-a").html("获取验证码");
-                    // 将点击按钮的onclick事件函数恢复回去
                     $(".phonecode-a").attr("onclick", "sendSMSCode();");
                 } else {
                     num -= 1;
@@ -72,7 +71,7 @@ function sendSMSCode() {
             }, 1000, 60)
         } else {
             // 表示后端出现了错误，可以将错误信息展示到前端页面中
-            $("#phone-code-err span").html(resp.errmsg);
+            $("#phone-code-err span").html(resp.Errmsg);
             $("#phone-code-err").show();
             // 将点击按钮的onclick事件函数恢复回去
             $(".phonecode-a").attr("onclick", "sendSMSCode();");

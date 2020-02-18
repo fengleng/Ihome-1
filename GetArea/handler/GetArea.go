@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/cache"
 	_ "github.com/astaxie/beego/cache/redis"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/garyburd/redigo/redis"
@@ -25,16 +24,7 @@ func (e *GetArea) Call(ctx context.Context, req *GETAREA.Request, rsp *GETAREA.R
 	rsp.Errmsg = utils.RecodeText(rsp.Error)
 
 	// 1. 从缓存中获取数据， 如果有数据直接发送给前端
-	redis_conf := map[string]string{
-		"key":   utils.G_server_name,
-		"conn":  utils.G_redis_addr + ":" + utils.G_redis_port,
-		"dbNum": utils.G_redis_dbnum,
-	}
-	beego.Info(redis_conf)
-	//将map转换为json
-	redis_conf_json, _ := json.Marshal(redis_conf)
-	// 创建redis句柄
-	bm, err := cache.NewCache("redis", string(redis_conf_json))
+	bm, err := utils.Redis(utils.G_server_name, utils.G_redis_addr, utils.G_redis_port, utils.G_redis_dbnum)
 	if err != nil {
 		beego.Info("redis 连接失败: ", err)
 		rsp.Error = utils.RECODE_DBERR
