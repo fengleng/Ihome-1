@@ -24,12 +24,19 @@ import (
 	go_micro_srv_PostAvatar "sss/PostAvatar/proto/PostAvatar"
 	go_micro_srv_PostLogin "sss/PostLogin/proto/PostLogin"
 	go_micro_srv_PostRet "sss/PostRet/proto/PostRet"
+	go_micro_srv_PutUserInfo "sss/PutUserInfo/proto/PutUserInfo"
 )
 
 func initService() micro.Service {
 	service := grpc.NewService()
 	service.Init()
 	return service
+}
+
+func parseParams(w http.ResponseWriter, r *http.Request) (map[string]string, error) {
+	var reqParams = map[string]string{}
+	err := json.NewDecoder(r.Body).Decode(&reqParams)
+	return reqParams, err
 }
 
 func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -367,6 +374,39 @@ func PostAvatar(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	data := make(map[string]string)
 	data["avatar_url"] = utils.AddDomain2Url(rsp.AvatarUrl)
+
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+
+}
+
+func PutUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("更新用户姓名 url: /api/v1.0/user/name")
+
+	reqParams, _ := parseParams(w, r)
+
+	cookie, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
+	}
+
+	service := initService()
+	client := go_micro_srv_PutUserInfo.NewPutUserInfoService("go.micro.srv.PutUserInfo", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_PutUserInfo.Request{
+		SessionID: cookie.Value,
+		UserName:  reqParams["name"],
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+
+	data := map[string]string{
+		"name": rsp.UserName,
+	}
 
 	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
 		http.Error(w, err.Error(), 503)

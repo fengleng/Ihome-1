@@ -54,7 +54,6 @@ func (e *PostAvatar) Call(ctx context.Context, req *PostAvatar_.Request, rsp *Po
 	}
 
 	rsp.AvatarUrl = resp_path
-	return nil
 
 	return nil
 }
