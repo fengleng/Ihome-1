@@ -48,6 +48,10 @@ func main() {
 	rou.POST("/api/v1.0/user/avatar", handler.PostAvatar)
 	// 更新用户信息
 	rou.PUT("/api/v1.0/user/name", handler.PutUserInfo)
+	// 检查用户实名认证
+	rou.GET("/api/v1.0/user/auth", handler.GetUserInfo)
+	// 更新实名认证信息
+	rou.POST("/api/v1.0/user/auth", handler.PostUserAuth)
 
 
 	service.Handle("/", rou)

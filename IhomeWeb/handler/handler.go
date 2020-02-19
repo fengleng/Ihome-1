@@ -24,6 +24,7 @@ import (
 	go_micro_srv_PostAvatar "sss/PostAvatar/proto/PostAvatar"
 	go_micro_srv_PostLogin "sss/PostLogin/proto/PostLogin"
 	go_micro_srv_PostRet "sss/PostRet/proto/PostRet"
+	go_micro_srv_PostUserAuth "sss/PostUserAuth/proto/PostUserAuth"
 	go_micro_srv_PutUserInfo "sss/PutUserInfo/proto/PutUserInfo"
 )
 
@@ -409,6 +410,35 @@ func PutUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	}
 
 	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+
+}
+
+func PostUserAuth(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("更新实名认证 url: /api/v1.0/user/auth")
+	reqParams, _ := parseParams(w, r)
+
+	cookie, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
+	}
+
+	service := initService()
+	client := go_micro_srv_PostUserAuth.NewPostUserAuthService("go.micro.srv.PostUserAuth", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_PostUserAuth.Request{
+		RealName:  reqParams["real_name"],
+		IDCard:    reqParams["id_card"],
+		SessionID: cookie.Value,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, nil); err != nil {
 		http.Error(w, err.Error(), 503)
 		return
 	}
