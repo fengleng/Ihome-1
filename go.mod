@@ -15,6 +15,7 @@ require (
 	github.com/kataras/rizla v0.1.1 // indirect
 	github.com/micro/go-micro v1.18.0
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644 // indirect
+	github.com/tedcy/fdfs_client v0.0.0-20200106031142-21a04994525a
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
 	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 )

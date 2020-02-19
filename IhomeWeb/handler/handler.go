@@ -21,6 +21,7 @@ import (
 	go_micro_srv_GetUserInfo "sss/GetUserInfo/proto/GetUserInfo"
 	"sss/IhomeWeb/models"
 	"sss/IhomeWeb/utils"
+	go_micro_srv_PostAvatar "sss/PostAvatar/proto/PostAvatar"
 	go_micro_srv_PostLogin "sss/PostLogin/proto/PostLogin"
 	go_micro_srv_PostRet "sss/PostRet/proto/PostRet"
 )
@@ -321,6 +322,52 @@ func GetUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		"id_card":    rsp.IDCard,
 		"avatar_url": utils.AddDomain2Url(rsp.AvatarURL),
 	}
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+}
+
+func PostAvatar(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("上传用户头像 url: /api/v1.0/user/avatar")
+
+	cookie, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
+	}
+
+	file, handle, err := r.FormFile("avatar")
+	if err != nil {
+		utils.Response(w, utils.RECODE_IOERR, utils.RecodeText(utils.RECODE_IOERR), nil)
+		return
+	}
+
+	fileBuffer := make([]byte, handle.Size)
+
+	_, err = file.Read(fileBuffer)
+	if err != nil {
+		utils.Response(w, utils.RECODE_IOERR, utils.RecodeText(utils.RECODE_IOERR), nil)
+		return
+	}
+
+	service := initService()
+	client := go_micro_srv_PostAvatar.NewPostAvatarService("go.micro.srv.PostAvatar", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_PostAvatar.Request{
+		Avatar:    fileBuffer,
+		SessionID: cookie.Value,
+		FileSize:  handle.Size,
+		FileName:  handle.Filename,
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+
+	data := make(map[string]string)
+	data["avatar_url"] = utils.AddDomain2Url(rsp.AvatarUrl)
+
 	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
 		http.Error(w, err.Error(), 503)
 		return

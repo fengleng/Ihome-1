@@ -44,6 +44,10 @@ func main() {
 	rou.DELETE("/api/v1.0/session", handler.DeleteLogout)
 	// 用户个人信息查看
 	rou.GET("/api/v1.0/user", handler.GetUserInfo)
+	// 上传用户头像
+	rou.POST("/api/v1.0/user/avatar", handler.PostAvatar)
+
+
 	service.Handle("/", rou)
 
 	// run service
