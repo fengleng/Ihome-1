@@ -20,7 +20,7 @@ func UploadByFileName(filename string) (string, error) {
 }
 
 func UploadByBuffer(fileBuffer []byte, fileExtName string) (string, error) {
-	client, err := fdfs_client.NewClientWithConfig("/Users/mds/Documents/go/sss/IhomeWeb/conf/fdfs.conf")
+	client, err := fdfs_client.NewClientWithConfig("./conf/fdfs.conf")
 	if err != nil {
 		fmt.Println("FDFS 初始化异常 Buffer：", err)
 		return "", nil

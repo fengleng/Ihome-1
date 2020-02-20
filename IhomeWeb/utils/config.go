@@ -20,7 +20,7 @@ var (
 )
 
 func InitConfig() {
-	appconf, err := config.NewConfig("ini", "/Users/mds/Documents/go/sss/IhomeWeb/conf/app.conf")
+	appconf, err := config.NewConfig("ini", "./conf/app.conf")
 	if err != nil {
 		beego.Debug(err)
 		return
