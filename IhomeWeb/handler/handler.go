@@ -17,6 +17,7 @@ import (
 	go_micro_srv_GetArea "sss/GetArea/proto/GetArea"
 	go_micro_srv_GetHouseInfo "sss/GetHouseInfo/proto/GetHouseInfo"
 	go_micro_srv_GetImageCd "sss/GetImageCd/proto/GetImageCd"
+	go_micro_srv_GetIndex "sss/GetIndex/proto/GetIndex"
 	go_micro_srv_GetSession "sss/GetSession/proto/GetSession"
 	go_micro_srv_GetSmscd "sss/GetSmscd/proto/GetSmscd"
 	go_micro_srv_GetUserHouses "sss/GetUserHouses/proto/GetUserHouses"
@@ -109,16 +110,23 @@ func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func GetIndex(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	beego.Info("获取首页轮播图 url:/api/v1.0/house/index")
-	response := map[string]interface{}{
-		"errno":  utils.RECODE_OK,
-		"errmsg": utils.RecodeText(utils.RECODE_OK),
-	}
-	w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), 500)
+	service := initService()
+	client := go_micro_srv_GetIndex.NewGetIndexService("go.micro.srv.GetIndex", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_GetIndex.Request{})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
 		return
 	}
+
+	houses := []interface{}{}
+	json.Unmarshal(rsp.Mix, &houses)
+
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, houses); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+
 }
 
 func GetSession(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -142,7 +150,7 @@ func GetSession(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	data := map[string]string{}
 	data["name"] = resp.UserName
 	beego.Info("========================")
-	if err := utils.Response(w, resp.Errno, utils.RecodeText(resp.Errmsg), data); err != nil {
+	if err := utils.Response(w, resp.Errno, utils.RecodeText(resp.Errno), data); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
