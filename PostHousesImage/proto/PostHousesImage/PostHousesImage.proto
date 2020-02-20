@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package go.micro.srv.PostHousesImage;
+
+service PostHousesImage {
+    rpc Call (Request) returns (Response) {
+    }
+}
+
+message Message {
+    string Say = 1;
+}
+
+message Request {
+    bytes Image = 1;
+    string SessionID = 2;
+    int64 FileSize = 3;
+    string FileName = 4;
+    string HouseId = 5;
+}
+
+message Response {
+    string Errno = 1;
+    string Errmsg = 2;
+    string ImageUrl = 3;
+}
+
+message StreamingRequest {
+    int64 count = 1;
+}
+
+message StreamingResponse {
+    int64 count = 1;
+}
+
+message Ping {
+    int64 stroke = 1;
+}
+
+message Pong {
+    int64 stroke = 1;
+}

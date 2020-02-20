@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package go.micro.srv.PostHouses;
+
+service PostHouses {
+    rpc Call (Request) returns (Response) {
+    }
+}
+
+message Message {
+    string say = 1;
+}
+
+message Request {
+    string Title = 1;
+    string Price = 2;
+    string AreaId = 3;
+    string Address = 14;
+    string RoomCount = 4;
+    string Acreage = 5;
+    string Unit = 6;
+    string Capacity = 7;
+    string Beds = 8;
+    string Deposit = 9;
+    string MinDays = 10;
+    string MaxDays = 11;
+    repeated string Facility = 12;
+    string SessionId = 13;
+
+}
+
+message Response {
+    string Errno = 1;
+    string Errmsg = 2;
+    string HouseId = 3;
+}
+
+message StreamingRequest {
+    int64 count = 1;
+}
+
+message StreamingResponse {
+    int64 count = 1;
+}
+
+message Ping {
+    int64 stroke = 1;
+}
+
+message Pong {
+    int64 stroke = 1;
+}

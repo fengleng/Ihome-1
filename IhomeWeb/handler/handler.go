@@ -23,22 +23,46 @@ import (
 	"sss/IhomeWeb/models"
 	"sss/IhomeWeb/utils"
 	go_micro_srv_PostAvatar "sss/PostAvatar/proto/PostAvatar"
+	go_micro_srv_PostHouses "sss/PostHouses/proto/PostHouses"
+	go_micro_srv_PostHousesImage "sss/PostHousesImage/proto/PostHousesImage"
 	go_micro_srv_PostLogin "sss/PostLogin/proto/PostLogin"
 	go_micro_srv_PostRet "sss/PostRet/proto/PostRet"
 	go_micro_srv_PostUserAuth "sss/PostUserAuth/proto/PostUserAuth"
 	go_micro_srv_PutUserInfo "sss/PutUserInfo/proto/PutUserInfo"
 )
 
+type ReqestParam struct {
+	Name      string   `json:"name"`
+	IDCard    string   `json:"id_card"`
+	RealName  string   `json:"real_name"`
+	Mobile    string   `json:"mobile"`
+	Password  string   `json:"password"`
+	SmsCode   string   `json:"sms_code"`
+	Title     string   `json:"title"`
+	Price     string   `json:"price"`
+	AreaId    string   `json:"area_id"`
+	Address   string   `json:"address"`
+	RoomCount string   `json:"room_count"`
+	Acreage   string   `json:"acreage"`
+	Unit      string   `json:"unit"`
+	Capacity  string   `json:"capacity"`
+	Beds      string   `json:"beds"`
+	Deposit   string   `json:"deposit"`
+	MinDays   string   `json:"min_days"`
+	MaxDays   string   `json:"max_days"`
+	Facility  []string `json:"facility"`
+}
+
+func parseParams(w http.ResponseWriter, r *http.Request) (*ReqestParam, error) {
+	var reqParams = &ReqestParam{}
+	err := json.NewDecoder(r.Body).Decode(reqParams)
+	return reqParams, err
+}
+
 func initService() micro.Service {
 	service := grpc.NewService()
 	service.Init()
 	return service
-}
-
-func parseParams(w http.ResponseWriter, r *http.Request) (map[string]string, error) {
-	var reqParams = map[string]string{}
-	err := json.NewDecoder(r.Body).Decode(&reqParams)
-	return reqParams, err
 }
 
 func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -199,13 +223,10 @@ func GetSmsCode(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 func PostRet(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	beego.Info("用户注册 url: api/v1.0/users")
-	var reqParams = map[string]string{}
-	if err := json.NewDecoder(r.Body).Decode(&reqParams); err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	reqParams, _ := parseParams(w, r)
 	beego.Info(reqParams, "===========")
-	if reqParams["mobile"] == "" || reqParams["password"] == "" || reqParams["sms_code"] == "" {
+
+	if reqParams.Mobile == "" || reqParams.Password == "" || reqParams.SmsCode == "" {
 		utils.Response(w, utils.RECODE_PARAMERR, utils.RecodeText(utils.RECODE_PARAMERR), nil)
 		return
 	}
@@ -214,9 +235,9 @@ func PostRet(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	client := go_micro_srv_PostRet.NewPostRetService("go.micro.srv.PostRet", service.Client())
 	resp, err := client.Call(context.TODO(), &go_micro_srv_PostRet.Request{
-		Mobile:   reqParams["mobile"],
-		Password: reqParams["password"],
-		SmsCode:  reqParams["sms_code"],
+		Mobile:   reqParams.Mobile,
+		Password: reqParams.Password,
+		SmsCode:  reqParams.SmsCode,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -232,17 +253,13 @@ func PostRet(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 func PostLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	beego.Info("用户登陆 url: /api/v1.0/sessions")
-	var reqParams = map[string]string{}
-	if err := json.NewDecoder(r.Body).Decode(&reqParams); err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	reqParams, _ := parseParams(w, r)
 	beego.Info("请求数据：", reqParams)
 	service := initService()
 	client := go_micro_srv_PostLogin.NewPostLoginService("go.micro.srv.PostLogin", service.Client())
 	resp, err := client.Call(context.TODO(), &go_micro_srv_PostLogin.Request{
-		Mobile:   reqParams["mobile"],
-		Password: reqParams["password"],
+		Mobile:   reqParams.Mobile,
+		Password: reqParams.Password,
 	})
 
 	if err != nil {
@@ -399,7 +416,7 @@ func PutUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	client := go_micro_srv_PutUserInfo.NewPutUserInfoService("go.micro.srv.PutUserInfo", service.Client())
 	rsp, err := client.Call(context.TODO(), &go_micro_srv_PutUserInfo.Request{
 		SessionID: cookie.Value,
-		UserName:  reqParams["name"],
+		UserName:  reqParams.Name,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), 502)
@@ -430,8 +447,8 @@ func PostUserAuth(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	service := initService()
 	client := go_micro_srv_PostUserAuth.NewPostUserAuthService("go.micro.srv.PostUserAuth", service.Client())
 	rsp, err := client.Call(context.TODO(), &go_micro_srv_PostUserAuth.Request{
-		RealName:  reqParams["real_name"],
-		IDCard:    reqParams["id_card"],
+		RealName:  reqParams.RealName,
+		IDCard:    reqParams.IDCard,
 		SessionID: cookie.Value,
 	})
 	if err != nil {
@@ -475,6 +492,99 @@ func GetUserHouses(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	data := map[string]interface{}{
 		"houses": houses,
 	}
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+
+}
+
+func PostHouses(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("用户发布的房屋信息 url: /api/v1.0/user/houses")
+
+	reqParams := ReqestParam{}
+	json.NewDecoder(r.Body).Decode(&reqParams)
+
+	fmt.Printf("===========, %+v\n", reqParams)
+	cookie, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
+	}
+
+	service := initService()
+
+	client := go_micro_srv_PostHouses.NewPostHousesService("go.micro.srv.PostHouses", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_PostHouses.Request{
+		Title:     reqParams.Title,
+		Price:     reqParams.Price,
+		AreaId:    reqParams.AreaId,
+		Address:   reqParams.Address,
+		RoomCount: reqParams.RoomCount,
+		Acreage:   reqParams.Acreage,
+		Unit:      reqParams.Unit,
+		Capacity:  reqParams.Capacity,
+		Beds:      reqParams.Beds,
+		Deposit:   reqParams.Deposit,
+		MinDays:   reqParams.MinDays,
+		MaxDays:   reqParams.MaxDays,
+		Facility:  reqParams.Facility,
+		SessionId: cookie.Value,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+
+	data := map[string]interface{}{
+		"house_id": rsp.HouseId,
+	}
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+}
+
+func PostHousesImage(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("用户上传的房屋图片 url: /api/v1.0/houses/:id/images")
+	houseId := p.ByName("id")
+	cookie, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
+	}
+
+	file, handle, err := r.FormFile("house_image")
+	if err != nil {
+		utils.Response(w, utils.RECODE_IOERR, utils.RecodeText(utils.RECODE_IOERR), nil)
+		return
+	}
+
+	fileBuffer := make([]byte, handle.Size)
+	_, err = file.Read(fileBuffer)
+	if err != nil {
+		utils.Response(w, utils.RECODE_IOERR, utils.RecodeText(utils.RECODE_IOERR), nil)
+		return
+	}
+
+	service := initService()
+	client := go_micro_srv_PostHousesImage.NewPostHousesImageService("go.micro.srv.PostHousesImage", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_PostHousesImage.Request{
+		Image:     fileBuffer,
+		SessionID: cookie.Value,
+		FileSize:  handle.Size,
+		FileName:  handle.Filename,
+		HouseId:   houseId,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+
+	data := map[string]string{
+		"url": utils.AddDomain2Url(rsp.ImageUrl),
+	}
+
 	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
 		http.Error(w, err.Error(), 503)
 		return
