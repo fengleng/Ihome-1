@@ -54,6 +54,7 @@ function updateHouseData(action) {
                 if ("renew" == action) {
                     cur_page = 1;
                     $(".house-list").html(template("house-list-tmpl", {houses:resp.data.houses}));
+                    console.log(resp, "+++++++++")
                 } else {
                     cur_page = next_page;
                     $(".house-list").append(template("house-list-tmpl", {houses: resp.data.houses}));

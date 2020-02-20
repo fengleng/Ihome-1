@@ -61,6 +61,7 @@ func main() {
 	// 查看房屋详细信息
 	rou.GET("/api/v1.0/houses/:id", handler.GetHouseInfo)
 
+	rou.GET("/api/v1.0/houses", handler.GetHouses)
 	service.Handle("/", rou)
 
 	// run service

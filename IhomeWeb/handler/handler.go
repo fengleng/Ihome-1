@@ -16,6 +16,7 @@ import (
 	go_micro_srv_DeleteSession "sss/DeleteSession/proto/DeleteSession"
 	go_micro_srv_GetArea "sss/GetArea/proto/GetArea"
 	go_micro_srv_GetHouseInfo "sss/GetHouseInfo/proto/GetHouseInfo"
+	go_micro_srv_GetHouses "sss/GetHouses/proto/GetHouses"
 	go_micro_srv_GetImageCd "sss/GetImageCd/proto/GetImageCd"
 	go_micro_srv_GetIndex "sss/GetIndex/proto/GetIndex"
 	go_micro_srv_GetSession "sss/GetSession/proto/GetSession"
@@ -149,7 +150,6 @@ func GetSession(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	}
 	data := map[string]string{}
 	data["name"] = resp.UserName
-	beego.Info("========================")
 	if err := utils.Response(w, resp.Errno, utils.RecodeText(resp.Errno), data); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -621,6 +621,10 @@ func GetHouseInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		SessionId: cookie.Value,
 		HouseId:   houseId,
 	})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
 
 	house := models.House{}
 	json.Unmarshal(rsp.HouseData, &house)
@@ -630,6 +634,39 @@ func GetHouseInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	dataMap["house"] = house.To_one_house_desc()
 
 	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, dataMap); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+
+}
+
+func GetHouses(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("搜索房源信息 url: /api/v1.0/houses")
+	ps := r.URL.Query()
+
+	service := initService()
+	client := go_micro_srv_GetHouses.NewGetHousesService("go.micro.srv.GetHouses", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_GetHouses.Request{
+		AreaId:     ps["aid"][0],
+		Start:      ps["sd"][0],
+		End:        ps["ed"][0],
+		SearchKind: ps["sk"][0],
+		Page:       ps["p"][0],
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+
+	houseList := []interface{}{}
+	json.Unmarshal(rsp.Houses, &houseList)
+
+	data := map[string]interface{}{
+		"current_page": rsp.CurrentPage,
+		"houses":       houseList,
+		"total_page":   rsp.TotalPage,
+	}
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
 		http.Error(w, err.Error(), 503)
 		return
 	}
