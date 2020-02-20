@@ -32,9 +32,14 @@ func (e *PostHouse) Call(ctx context.Context, req *PostHouses.Request, rsp *Post
 	valueId := bm.Get(sessionId)
 	id, _ := redis.Int(valueId, nil)
 
+	o := orm.NewOrm()
+
 	user := models.User{Id: id}
 	areaID, _ := strconv.Atoi(req.AreaId)
 	area := models.Area{Id: areaID}
+	o.Read(&user, "id")
+	o.Read(&area, "id")
+
 	facilities := []*models.Facility{}
 	for _, value := range req.Facility {
 		fid, _ := strconv.Atoi(value)
@@ -65,7 +70,7 @@ func (e *PostHouse) Call(ctx context.Context, req *PostHouses.Request, rsp *Post
 		Max_days:   maxdays,
 		//Facilities: facilities,
 	}
-	o := orm.NewOrm()
+
 	houseId, err := o.Insert(&house)
 	if err != nil {
 		beego.Info("数据库操作失败")

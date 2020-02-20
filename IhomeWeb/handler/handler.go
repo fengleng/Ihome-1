@@ -483,7 +483,11 @@ func GetUserHouses(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	}
 
 	housesList := []models.House{}
-	json.Unmarshal(rsp.Mix, &housesList)
+	err = json.Unmarshal(rsp.Mix, &housesList)
+	if err != nil {
+		beego.Info("反序列化异常：", err)
+
+	}
 	var houses []interface{}
 	for _, value := range housesList {
 		houses = append(houses, value.To_housr_info())

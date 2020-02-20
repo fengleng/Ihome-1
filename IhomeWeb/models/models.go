@@ -54,16 +54,21 @@ var HOUSE_LIST_PAGE_CAPACITY int = 2
 
 // 处理房屋信息
 func (this *House) To_housr_info() interface{} {
+	o := orm.NewOrm()
+	area := Area{Id: this.Area.Id}
+	user := User{Id:this.User.Id}
+	o.Read(&area, "id")
+	o.Read(&user, "id")
 	house_info := map[string]interface{}{
 		"house_id":    this.Id,
 		"title":       this.Title,
 		"price":       this.Price,
-		"area_name":   this.Area.Name,
+		"area_name":   area.Name,
 		"img_url":     utils.AddDomain2Url(this.Index_images_url),
 		"room_count":  this.Room_count,
 		"order_count": this.Order_count,
-		"address":     this.Order_count,
-		"user_avatar": utils.AddDomain2Url(this.User.Avatar_url),
+		"address":     this.Address,
+		"user_avatar": utils.AddDomain2Url(user.Avatar_url),
 		"ctime":       this.Ctime.Format("2006-01-02 15:04:05"),
 	}
 
@@ -136,7 +141,7 @@ func (this *House) To_one_house_desc() interface{} {
 
 // 区域信息 table_name= area
 type Area struct {
-	Id     int      `json:"aid"`                        // 区域编号 1 2
+	Id     int      `orm:"pk" json:"aid"`                        // 区域编号 1 2
 	Name   string   `orm:"size(32)" json:"aname"`       // 区域名字
 	Houses []*House `orm:"reverse(many)" json:"houses"` // 区域所有的房屋 与房屋表进行关联
 }

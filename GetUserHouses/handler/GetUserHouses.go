@@ -32,10 +32,9 @@ func (e *GetUserHouses) Call(ctx context.Context, req *GetUserHouses_.Request, r
 	valueId := bm.Get(sessionId)
 	id, _ := redis.Int(valueId, nil)
 
+	var houseList []models.House
 	o := orm.NewOrm()
-	qs := o.QueryTable("t_house")
-	houseList := []models.House{}
-	_, err = qs.Filter("user_id", id).All(&houseList)
+	_, err = o.QueryTable("t_house").Filter("user_id", id).All(&houseList)
 	if err != nil {
 		beego.Info("数据库查询失败")
 		rsp.Errno = utils.RECODE_DBERR
