@@ -65,7 +65,7 @@ func (e *PostHouse) Call(ctx context.Context, req *PostHouses.Request, rsp *Post
 		Unit:       req.Unit,
 		Capacity:   capacity,
 		Beds:       req.Beds,
-		Deposit:    deposit,
+		Deposit:    deposit*100,
 		Min_days:   mindays,
 		Max_days:   maxdays,
 		//Facilities: facilities,

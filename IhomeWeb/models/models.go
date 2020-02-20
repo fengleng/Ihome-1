@@ -56,7 +56,7 @@ var HOUSE_LIST_PAGE_CAPACITY int = 2
 func (this *House) To_housr_info() interface{} {
 	o := orm.NewOrm()
 	area := Area{Id: this.Area.Id}
-	user := User{Id:this.User.Id}
+	user := User{Id: this.User.Id}
 	o.Read(&area, "id")
 	o.Read(&user, "id")
 	house_info := map[string]interface{}{
@@ -75,7 +75,7 @@ func (this *House) To_housr_info() interface{} {
 	return house_info
 }
 
-// 处理1个房子的全部信息
+//处理1个房子的全部信息
 func (this *House) To_one_house_desc() interface{} {
 	house_desc := map[string]interface{}{
 		"hid":         this.Id,
@@ -84,8 +84,9 @@ func (this *House) To_one_house_desc() interface{} {
 		"user_avatar": utils.AddDomain2Url(this.User.Avatar_url),
 		"title":       this.Title,
 		"price":       this.Price,
-		"address":     this.Order_count,
+		"address":     this.Address,
 		"room_count":  this.Room_count,
+		"acreage":     this.Acreage,
 		"unit":        this.Unit,
 		"capacity":    this.Capacity,
 		"beds":        this.Beds,
@@ -93,31 +94,29 @@ func (this *House) To_one_house_desc() interface{} {
 		"min_days":    this.Min_days,
 		"max_days":    this.Max_days,
 	}
+
+	//房屋图片
 	img_urls := []string{}
 	for _, img_url := range this.Images {
 		img_urls = append(img_urls, utils.AddDomain2Url(img_url.Url))
 	}
 	house_desc["img_urls"] = img_urls
 
-	// 房屋设施
+	//房屋设施
 	facilities := []int{}
 	for _, facility := range this.Facilities {
 		facilities = append(facilities, facility.Id)
 	}
-
 	house_desc["facilities"] = facilities
 
-	// 评论信息
+	//评论信息
 	comments := []interface{}{}
 	orders := []OrderHouse{}
-
 	o := orm.NewOrm()
-	order_num, err := o.QueryTable("order_house").Filter("house_id", this.Id).Filter("status", ORDER_STATUS_COMPLETE).Count()
-
+	order_num, err := o.QueryTable("t_order_house").Filter("house__id", this.Id).Filter("status", ORDER_STATUS_COMPLETE).OrderBy("-ctime").Limit(10).All(&orders)
 	if err != nil {
-		beego.Error("select orders comments error, err = :", err, "house id = ", this.Id)
+		beego.Error("select orders comments error, err =", err, "house id = ", this.Id)
 	}
-
 	for i := 0; i < int(order_num); i++ {
 		o.LoadRelated(&orders[i], "User")
 		var username string
@@ -129,19 +128,19 @@ func (this *House) To_one_house_desc() interface{} {
 
 		comment := map[string]string{
 			"comment":   orders[i].Comment,
-			"yser_name": username,
+			"user_name": username,
 			"ctime":     orders[i].Ctime.Format("2006-01-02 15:04:05"),
 		}
 		comments = append(comments, comment)
 	}
 	house_desc["comments"] = comments
-	return house_desc
 
+	return house_desc
 }
 
 // 区域信息 table_name= area
 type Area struct {
-	Id     int      `orm:"pk" json:"aid"`                        // 区域编号 1 2
+	Id     int      `orm:"pk" json:"aid"`               // 区域编号 1 2
 	Name   string   `orm:"size(32)" json:"aname"`       // 区域名字
 	Houses []*House `orm:"reverse(many)" json:"houses"` // 区域所有的房屋 与房屋表进行关联
 }

@@ -15,6 +15,7 @@ import (
 	"regexp"
 	go_micro_srv_DeleteSession "sss/DeleteSession/proto/DeleteSession"
 	go_micro_srv_GetArea "sss/GetArea/proto/GetArea"
+	go_micro_srv_GetHouseInfo "sss/GetHouseInfo/proto/GetHouseInfo"
 	go_micro_srv_GetImageCd "sss/GetImageCd/proto/GetImageCd"
 	go_micro_srv_GetSession "sss/GetSession/proto/GetSession"
 	go_micro_srv_GetSmscd "sss/GetSmscd/proto/GetSmscd"
@@ -590,6 +591,37 @@ func PostHousesImage(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	}
 
 	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, data); err != nil {
+		http.Error(w, err.Error(), 503)
+		return
+	}
+
+}
+
+func GetHouseInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	beego.Info("查看房屋详情 url: /api/v1.0/houses/:id")
+	houseId := p.ByName("id")
+
+	cookie, err := r.Cookie("userLogin")
+	if err != nil {
+		utils.Response(w, utils.RECODE_SESSIONERR, utils.RecodeText(utils.RECODE_SESSIONERR), nil)
+		return
+	}
+
+	service := initService()
+	client := go_micro_srv_GetHouseInfo.NewGetHouseInfoService("go.micro.srv.GetHouseInfo", service.Client())
+	rsp, err := client.Call(context.TODO(), &go_micro_srv_GetHouseInfo.Request{
+		SessionId: cookie.Value,
+		HouseId:   houseId,
+	})
+
+	house := models.House{}
+	json.Unmarshal(rsp.HouseData, &house)
+
+	dataMap := make(map[string]interface{})
+	dataMap["user_id"] = rsp.UserId
+	dataMap["house"] = house.To_one_house_desc()
+
+	if err := utils.Response(w, rsp.Errno, rsp.Errmsg, dataMap); err != nil {
 		http.Error(w, err.Error(), 503)
 		return
 	}

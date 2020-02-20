@@ -56,7 +56,10 @@ func main() {
 	rou.GET("/api/v1.0/user/houses", handler.GetUserHouses)
 	// 发布新房源
 	rou.POST("/api/v1.0/houses", handler.PostHouses)
+	// 房屋图片上传
 	rou.POST("/api/v1.0/houses/:id/images", handler.PostHousesImage)
+	// 查看房屋详细信息
+	rou.GET("/api/v1.0/houses/:id", handler.GetHouseInfo)
 
 
 	service.Handle("/", rou)
